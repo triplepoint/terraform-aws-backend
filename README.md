@@ -7,6 +7,20 @@ This terraform module implements what is described in the Terraform S3 Backend [
 
 S3 Encryption is enabled and Public Access policies used to ensure security.
 
+State locking uses S3 native lockfiles rather than a DynamoDB table. Configure your backend with `use_lockfile = true` (requires Terraform >= 1.10):
+
+```hcl
+terraform {
+  backend "s3" {
+    bucket       = "<prefix>-terraform-backend"
+    key          = "<path>/terraform.tfstate"
+    region       = "<region>"
+    encrypt      = true
+    use_lockfile = true
+  }
+}
+```
+
 This module is expected to be deployed to a 'master' AWS account so that you can start using remote state as soon as possible. As this module creates the remote state backend, its statefile needs to be commited to git as it cannot be stored remotely. No sensetive information should be present in this file.
 
 It is also expected that you check the statefile for this module into git to avoid the chicken and egg problem.
@@ -18,7 +32,6 @@ The following resources will be created:
       -  Block public policy
       -  Ignore public acls
       -  Restrict public buckets
-- AWS DynamoDB Table - Used for workspace locking
 - Identity and Access Management (IAM) - Backend All -  Role that Allows access to all Terraform workspaces
 - Identity and Acesss Management (IAM) - Backend restricted - These roles are limited to their specific workspace through the use of S3 resource permissions
 
@@ -27,7 +40,6 @@ The following resources will be created:
 |Name | Resource | Description |
 |-----|----------|-------------|
 | \<prefix>-terraform-backend | S3 Bucket | Used to store Terraform state files |
-| terraform-lock | DynamoDB Table | Used for workspace locking |
 | terraform-backend | IAM Role | Role created that has access to all terraform workspaces |
 | terraform-backend-\<workspace> | IAM Role | Role created that only has access to the specified workspace |
 
@@ -60,7 +72,6 @@ The following resources will be created:
 
 | Name | Description |
 |------|-------------|
-| dynamo\_lock\_table | n/a |
 | iam\_roles | n/a |
 | state\_bucket\_arn | n/a |
 
